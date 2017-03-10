@@ -9,7 +9,7 @@ def Main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--verbosity", help="increase output verbosity")
     parser.add_argument("--ip", help="listening ip")
-    parser.add_argument("--port", help="listening port")
+    parser.add_argument("--port", help="listening port", type=int)
     args = parser.parse_args()
     if args.verbosity:
         print("verbosity turned on")
