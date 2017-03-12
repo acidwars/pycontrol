@@ -3,7 +3,9 @@ import socket
 import sys
 import argparse
 import ssl
+import time
 from ssl_server import bcolors
+import threading
 
 def Main():
     parser = argparse.ArgumentParser()
@@ -15,17 +17,25 @@ def Main():
         print("verbosity turned on")
 
     try:
-        host = args.ip
-        port = args.port
+        if args.ip:
+            host = args.ip
+        else:
+            host = '127.0.0.1'
+        if args.port:
+            port = args.port
+        else:
+            port = 50000
+
         mySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        wrappedSocket = ssl.wrap_socket(mySocket,ssl_version=ssl.PROTOCOL_TLSv1_2, certfile='client.crt',keyfile='client.key')
+        wrappedSocket = ssl.wrap_socket(mySocket,ssl_version=ssl.PROTOCOL_TLSv1_2, \
+        certfile='client.crt',keyfile='client.key', ciphers='ECDH')
         wrappedSocket.connect((host, port))
-        print(repr(wrappedSocket.getpeername()))
+        print(bcolors.OKBLUE + repr(wrappedSocket.getpeername()))
         print(wrappedSocket.cipher())
-        #wrappedSocket.do_handshake
-        #mySocket.connect((host,port))
+        print(bcolors.ENDC)
 
         print("connected... ")
+
         message = input(">>> ")
         while message != "q":
                 #mySocket.send(message.encode())
@@ -40,16 +50,25 @@ def Main():
     except KeyboardInterrupt:
         #mySocket.close()
         wrappedSocket.close()
+        sys.exit(0)
     except ConnectionRefusedError:
-        print("Can't connect :(")
+        print(bcolors.FAIL + "connection refused" + bcolors.ENDC)
+        time.sleep(5)
+        print(bcolors.HEADER +  "reconnecting" + bcolors.ENDC)
+        Main()
     except BrokenPipeError:
         print("Broken pipe :(")
+        #Main()
     except IndexError:
         print("Please specify a port!")
         print(sys.argv[0] + " PORT")
-    except EOFError:
+    except EOFError as e:
+        print(e)
         #mySocket.close()
         wrappedSocket.close()
+    except ssl.SSLEOFError as e:
+        print(e)
+        #Main()
 
 if __name__ == '__main__':
     Main()
